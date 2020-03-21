@@ -75,7 +75,7 @@
         }).bindPopup(title);
       }
 
-      fetch('/lebensmittelautomaten.geojson')
+      fetch('lebensmittelautomaten.geojson')
         .then(res => res.json())
         .then(geojson => L.geoJSON(geojson, { pointToLayer: mapPointToLayer }).addTo(map));
     </script>
