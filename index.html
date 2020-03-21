@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf8">
+    <title>Nur Das Wichtigste</title>
+     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ==" crossorigin="" />
+  </head>
+
+  <body>
+    <div id="map"></div>
+
+    <style>
+      /* reset */
+      html,body {
+        padding: 0;
+        margin: 0;
+      }
+
+
+      #map {
+        height: 100vh;
+      }
+    </style>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js" integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew==" crossorigin=""></script>
+
+    <script type="text/javascript">
+      const map = L.map('map').setView([52.52, 13.4049], 13);
+
+      L.tileLayer('https://api.mapbox.com/styles/v1/{id}/tiles/{z}/{x}/{y}?access_token={accessToken}', {
+        attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+        maxZoom: 18,
+        id: 'mapbox/streets-v11',
+        tileSize: 512,
+        zoomOffset: -1,
+        accessToken: 'pk.eyJ1Ijoic2NobmVlZnV4IiwiYSI6ImNrODF4bmlzNDBzNmczbHJ1NXlscTJ3NWIifQ.8IeslcHx8ldMMOAuZEMqWw',
+      }).addTo(map);
+
+      /*
+        https://overpass-turbo.eu/
+        Overpass Query:
+
+        [out:json][timeout:90];
+        {{geocodeArea:Germany}}->.searchArea;
+        (
+          node[amenity=vending_machine][vending~bread]({{bbox}});
+          node[amenity=vending_machine][vending~drinks]({{bbox}});
+          node[amenity=vending_machine][vending~food]({{bbox}});
+          node[amenity=vending_machine][vending~milk]({{bbox}});
+          node[amenity=vending_machine][vending~water]({{bbox}});
+        );
+        out body;
+        >;
+        out skel qt;
+      */
+      const vendingDescription = {
+        'bread': 'Brot',
+        'drinks': 'Getränke',
+        'food': 'Lebensmittel',
+        'milk': 'Milch',
+        'water': 'Wasser',
+      };
+
+      function mapPointToLayer(feature, latlng) {
+        const labels = [];
+        Object.entries(vendingDescription).forEach(([vending, label]) => {
+          if (feature.properties.vending.includes(vending)) {
+            labels.push(label);
+          }
+        });
+
+        const title = 'name' in feature.properties ? feature.properties.name : labels.join(', ');
+
+        return L.marker(latlng, {
+          title: title,
+        }).bindPopup(title);
+      }
+
+      fetch('/lebensmittelautomaten.geojson')
+        .then(res => res.json())
+        .then(geojson => L.geoJSON(geojson, { pointToLayer: mapPointToLayer }).addTo(map));
+    </script>
+  </body>
+</html>
